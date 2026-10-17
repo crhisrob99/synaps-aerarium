@@ -1,0 +1,25 @@
+{
+  "name": "Synaps Aerarium — Tabula Financia",
+  "short_name": "Aerarium",
+  "description": "Tablero de Control Financiero Personal, Presupuestos y Burn Rate",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#07090e",
+  "theme_color": "#07090e",
+  "icons": [
+    {
+      "src": "Vertex.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

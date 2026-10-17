@@ -1,0 +1,156 @@
+{
+  "name": "Synaps - Error Trigger (Aerarium)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Parametra",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-parametra-error",
+      "name": "Leer Parametra",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const errorData = $('Error Trigger').first().json;\nconst parametra = $('Leer Parametra').all().map(i => i.json).filter(j => j && j.parametro);\n\nconst chatIdConfig = parametra.find(p => p.parametro === 'telegram_chat_id')?.valor || '';\nconst workflowName = errorData.workflow?.name || 'Flujo Desconocido';\nconst errorMsg = errorData.execution?.error?.message || errorData.execution?.error?.name || 'Error no especificado';\nconst execId = errorData.execution?.id || Date.now().toString();\nconst nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);\n\nconst mensajeTelegram = '🚨 *Synaps Aerarium — Alerta de Error*\\n━━━━━━━━━━━━━━━━━━━━\\n' +\n  '⚠️ *Flujo afectado:* ' + workflowName + '\\n' +\n  '❌ *Error:* ' + errorMsg + '\\n' +\n  '🆔 *Ejecución ID:* ' + execId + '\\n' +\n  '⏱️ *Fecha:* ' + nowStr + '\\n━━━━━━━━━━━━━━━━━━━━\\n_Revisar de inmediato en n8n._';\n\nreturn [{\n  json: {\n    chat_id: chatIdConfig,\n    flujo_nombre: workflowName,\n    error_mensaje: errorMsg,\n    id_alerta: 'error_' + workflowName.replace(/\\s+/g, '_') + '_' + execId,\n    fecha_envio: nowStr,\n    tipo: 'error',\n    mensaje: mensajeTelegram\n  }\n}];"
+      },
+      "executeOnce": true,
+      "id": "node-prep-error",
+      "name": "Preparar Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.mensaje }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-error-send",
+      "name": "Notificar Error Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Monitiones",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_alerta": "={{ $('Preparar Error').first().json.id_alerta }}",
+            "fecha_envio": "={{ $('Preparar Error').first().json.fecha_envio }}",
+            "tipo": "error",
+            "mensaje": "={{ $('Preparar Error').first().json.flujo_nombre }}: {{ $('Preparar Error').first().json.error_mensaje }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-append-error-monitiones",
+      "name": "Registrar Error en Monitiones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1040,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Leer Parametra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Parametra": {
+      "main": [
+        [
+          {
+            "node": "Preparar Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Error": {
+      "main": [
+        [
+          {
+            "node": "Notificar Error Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Error Telegram": {
+      "main": [
+        [
+          {
+            "node": "Registrar Error en Monitiones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

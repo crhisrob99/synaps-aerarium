@@ -1,0 +1,346 @@
+{
+  "name": "Synaps - Alertas Diarias (Aerarium)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "node-schedule",
+      "name": "Cron Diario 8:00 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Parametra",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-parametra",
+      "name": "Leer Parametra",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        300,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Vectigalia",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-vectigalia",
+      "name": "Leer Vectigalia",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        500,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Fides",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-fides",
+      "name": "Leer Fides (Tarjetas)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        700,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Monitiones",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-monitiones",
+      "name": "Leer Monitiones (Alertas Previas)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        900,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// =========================================================================\n// ENGINE DE ALERTAS Y VENCIMIENTOS (AERARIUM)\n// Modo: Run Once for All Items\n// =========================================================================\n\n// 1. Parametro opcional fecha_hoy para simulacion (formato 'YYYY-MM-DD')\nconst fechaParam = ($input.first()?.json?.fecha_hoy || '').trim();\nconst es_simulacion = Boolean(fechaParam);\n\nlet y, m, d, todayStr;\nif (es_simulacion) {\n  todayStr = fechaParam;\n  [y, m, d] = todayStr.split('-').map(Number);\n} else {\n  const now = new Date();\n  todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });\n  [y, m, d] = todayStr.split('-').map(Number);\n}\n\n// 2. Extraer datos de los nodos anteriores por nombre\nconst parametra = $('Leer Parametra').all().map(i => i.json).filter(j => j && j.parametro);\nconst vectigalia = $('Leer Vectigalia').all().map(i => i.json).filter(j => j && j.id);\nconst fides = $('Leer Fides (Tarjetas)').all().map(i => i.json).filter(j => j && j.tarjeta);\n\n// Obtener chat_id de Parametra\nconst chatIdConfig = parametra.find(p => p.parametro === 'telegram_chat_id')?.valor || '';\n\n// 3. Extraer historial de Monitiones para Idempotencia\nlet monitionesPrevias = [];\ntry {\n  monitionesPrevias = $('Leer Monitiones (Alertas Previas)').all()\n    .map(i => i.json?.id_alerta)\n    .filter(Boolean);\n} catch (e) {\n  monitionesPrevias = [];\n}\nconst enviadasSet = new Set(monitionesPrevias);\n\nconst alertasCandidatas = [];\nconst daysInMonth = new Date(y, m, 0).getDate();\nconst fechaHoyDate = new Date(y, m - 1, d);\n\n// -------------------------------------------------------------------------\n// REGLA A: Días de Pago de Quincena (14 y 30 / fin de mes)\n// -------------------------------------------------------------------------\nconst isPayDay14 = (d === 14);\nconst isPayDay30 = (d === Math.min(30, daysInMonth));\n\nif (isPayDay14 || isPayDay30) {\n  const qLabel = isPayDay14 ? 'Q1' : 'Q2';\n  alertasCandidatas.push({\n    id_alerta: `quincena_${todayStr}_${qLabel}_ingreso`,\n    tipo: 'INGRESO',\n    concepto: 'Sueldo',\n    mensaje: `🎉 *Hoy cae quincena esperada:* ~$22,200 MXN (${qLabel}). Recuerda verificar abonos en cuenta.`\n  });\n}\n\n// -------------------------------------------------------------------------\n// REGLA B: Compromisos en Vectigalia (Días configurables por fila, default 2)\n// -------------------------------------------------------------------------\nfor (const item of vectigalia) {\n  if (item.activo !== 'SI' || item.tipo !== 'gasto') continue;\n\n  // Días de aviso de cada fila, sin valor fijo, default 2 si esta vacio\n  const avisoDias = (item.aviso_dias !== undefined && item.aviso_dias !== '' && !isNaN(parseInt(item.aviso_dias)))\n    ? parseInt(item.aviso_dias)\n    : 2;\n\n  const monto = parseFloat(item.monto || 0);\n  const frecuencia = (item.frecuencia || 'mensual').toLowerCase();\n\n  // B.1: Fin de Deuda - 30 dias antes de fecha_fin si es_deuda = SI\n  if (item.es_deuda === 'SI' && item.fecha_fin) {\n    const [fy, fm, fd] = item.fecha_fin.split('-').map(Number);\n    const fechaFinDate = new Date(fy, fm - 1, fd);\n    const diffFin = Math.round((fechaFinDate - fechaHoyDate) / (1000 * 60 * 60 * 24));\n    if (diffFin === 30) {\n      alertasCandidatas.push({\n        id_alerta: `${item.id}_${item.fecha_fin}_fin_deuda_30d`,\n        tipo: 'FIN_DEUDA',\n        concepto: item.concepto,\n        mensaje: `🎊 *Próximo fin de deuda:* Última mensualidad de ${item.concepto} en 30 días (${item.fecha_fin}).`\n      });\n    }\n  }\n\n  // Parsear dias: '14,30', '1', 'ultimo'\n  const rawDias = String(item.dia || '').split(',').map(s => s.trim().toLowerCase());\n\n  for (const rawD of rawDias) {\n    if (!rawD) continue;\n\n    let diaTarget = 0;\n    if (rawD === 'ultimo') {\n      diaTarget = daysInMonth;\n    } else {\n      const parsed = parseInt(rawD);\n      if (isNaN(parsed)) continue;\n      diaTarget = Math.min(parsed, daysInMonth);\n    }\n\n    const ocurrencias = [\n      { year: y, month: m, day: diaTarget }\n    ];\n\n    if (d >= 15 && diaTarget <= 10) {\n      const nextY = (m === 12) ? y + 1 : y;\n      const nextM = (m === 12) ? 1 : m + 1;\n      const daysInNextM = new Date(nextY, nextM, 0).getDate();\n      ocurrencias.push({\n        year: nextY,\n        month: nextM,\n        day: Math.min(diaTarget, daysInNextM)\n      });\n    }\n\n    for (const oc of ocurrencias) {\n      const fechaOcurrenciaDate = new Date(oc.year, oc.month - 1, oc.day);\n      const fechaOcurrenciaStr = `${oc.year}-${String(oc.month).padStart(2, '0')}-${String(oc.day).padStart(2, '0')}`;\n\n      // Vigencia [fecha_inicio, fecha_fin]\n      if (item.fecha_inicio) {\n        const [iy, im, id] = item.fecha_inicio.split('-').map(Number);\n        if (fechaOcurrenciaDate < new Date(iy, im - 1, id)) continue;\n      }\n      if (item.fecha_fin) {\n        const [fy, fm, fd] = item.fecha_fin.split('-').map(Number);\n        if (fechaOcurrenciaDate > new Date(fy, fm - 1, fd)) continue;\n      }\n\n      // Bimestralidad (cada 2 meses a partir de mes_inicio)\n      if (frecuencia === 'bimestral') {\n        const mesInicio = parseInt(item.mes_inicio || 1);\n        let anioInicio = item.fecha_inicio ? parseInt(item.fecha_inicio.split('-')[0]) : y;\n        const deltaMeses = (oc.year - anioInicio) * 12 + (oc.month - mesInicio);\n        if (deltaMeses < 0 || (deltaMeses % 2 !== 0)) continue;\n      }\n\n      const diffDays = Math.round((fechaOcurrenciaDate - fechaHoyDate) / (1000 * 60 * 60 * 24));\n\n      if (diffDays === 0) {\n        alertasCandidatas.push({\n          id_alerta: `${item.id}_${fechaOcurrenciaStr}_hoy`,\n          tipo: 'PAGO_HOY',\n          concepto: item.concepto,\n          mensaje: `⚠️ *Hoy vence compromiso:* ${item.concepto} por $${monto.toLocaleString('es-MX', {minimumFractionDigits: 2})} (${item.cuenta || 'Débito'})`\n        });\n      } else if (diffDays === avisoDias && avisoDias > 0) {\n        alertasCandidatas.push({\n          id_alerta: `${item.id}_${fechaOcurrenciaStr}_previo_${avisoDias}d`,\n          tipo: 'AVISO_PREVIO',\n          concepto: item.concepto,\n          mensaje: `🔔 *Próximo pago:* ${item.concepto} por $${monto.toLocaleString('es-MX', {minimumFractionDigits: 2})} vence en ${avisoDias} día(s) (el ${oc.day}-${oc.month}).`\n        });\n      }\n    }\n  }\n}\n\n// -------------------------------------------------------------------------\n// REGLA C: Tarjetas en Fides (Días de aviso configurables por tarjeta, default 2)\n// -------------------------------------------------------------------------\nfunction getCardAlias(name) {\n  const n = (name || '').toLowerCase();\n  if (n.includes('bbva')) return 'bbva';\n  if (n.includes('mercado') || n.includes('mp')) return 'mp';\n  return n.split(/\\s+/)[0] || 'tarjeta';\n}\n\nfor (const card of fides) {\n  if (!card.fecha_limite) continue;\n\n  const saldo = parseFloat(card.saldo_pago_sin_intereses || 0);\n  const [cy, cm, cd] = card.fecha_limite.split('-').map(Number);\n  const fechaLimiteDate = new Date(cy, cm - 1, cd);\n  const diffDays = Math.round((fechaLimiteDate - fechaHoyDate) / (1000 * 60 * 60 * 24));\n\n  // C.1 Si la tarjeta fue pagada y su fecha límite ya pasó: alerta única para actualizar estado de cuenta\n  if (card.pagada === 'SI') {\n    if (diffDays <= -1) {\n      const alias = getCardAlias(card.tarjeta);\n      alertasCandidatas.push({\n        id_alerta: `tarjeta_${card.tarjeta}_${card.fecha_limite}_renovar_estado`,\n        tipo: 'RENOVAR_ESTADO_CUENTA',\n        concepto: card.tarjeta,\n        mensaje: `💳 *Actualiza estado de cuenta de ${card.tarjeta}:*\\nSu periodo anterior (${card.fecha_limite}) ya concluyó y fue liquidado.\\nIngresa el nuevo saldo y fecha límite con:\\n👉 \\`estado ${alias} [monto] [AAAA-MM-DD]\\``\n      });\n    }\n    continue;\n  }\n\n  // C.2 Tarjeta no pagada: alertas de vencimiento\n  const avisoDiasCard = (card.aviso_dias !== undefined && card.aviso_dias !== '' && !isNaN(parseInt(card.aviso_dias)))\n    ? parseInt(card.aviso_dias)\n    : 2;\n\n  if (diffDays === 0) {\n    alertasCandidatas.push({\n      id_alerta: `tarjeta_${card.tarjeta}_${card.fecha_limite}_limite`,\n      tipo: 'TARJETA_LIMITE',\n      concepto: card.tarjeta,\n      mensaje: `🚨 *¡Fecha límite HOY!* Tarjeta ${card.tarjeta}. Saldo para no generar intereses: ${saldo.toLocaleString('es-MX', {minimumFractionDigits: 2})}.`\n    });\n  } else if (diffDays === avisoDiasCard && avisoDiasCard > 0) {\n    alertasCandidatas.push({\n      id_alerta: `tarjeta_${card.tarjeta}_${card.fecha_limite}_previo_${avisoDiasCard}d`,\n      tipo: 'TARJETA_PREVIO',\n      concepto: card.tarjeta,\n      mensaje: `💳 *Atención Tarjeta ${card.tarjeta}:* Saldo de ${saldo.toLocaleString('es-MX', {minimumFractionDigits: 2})} vence en ${avisoDiasCard} días (${card.fecha_limite}).`\n    });\n  }\n}\n\n// -------------------------------------------------------------------------\n// 4. Filtrado de Idempotencia\n// -------------------------------------------------------------------------\nconst alertasNuevas = alertasCandidatas.filter(a => !enviadasSet.has(a.id_alerta));\n\nif (alertasNuevas.length === 0) {\n  return [];\n}\n\nconst mensajeCompilado = \"🏛️ *Synaps Aerarium — Alertas Matutinas (8:00 AM)*\\n━━━━━━━━━━━━━━━━━━━━\\n\" + \n  alertasNuevas.map(a => a.mensaje).join(\"\\n\\n\") + \n  \"\\n━━━━━━━━━━━━━━━━━━━━\\n_Estado general: Tabula Financia actualizada._\";\n\nreturn [{\n  json: {\n    fecha_evaluada: todayStr,\n    chat_id: chatIdConfig,\n    es_simulacion: es_simulacion,\n    total_alertas: alertasNuevas.length,\n    mensaje: mensajeCompilado,\n    alertas_para_monitiones: alertasNuevas\n  }\n}];"
+      },
+      "executeOnce": true,
+      "id": "node-engine-alertas",
+      "name": "Engine de Alertas & Vencimientos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-simulacion",
+              "leftValue": "={{ $json.es_simulacion }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-if-simulacion",
+      "name": "¿Es Simulación?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1340,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Engine de Alertas & Vencimientos').first().json.chat_id }}",
+        "text": "={{ $json.mensaje }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-send-alert",
+      "name": "Despachar Alerta Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1580,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const alertas = $('Engine de Alertas & Vencimientos').first().json.alertas_para_monitiones || [];\nconst nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);\n\nreturn alertas.map(a => ({\n  json: {\n    id_alerta: a.id_alerta,\n    fecha_envio: nowStr,\n    tipo: a.tipo,\n    mensaje: a.mensaje.replace(/[*_`]/g, '')\n  }\n}));"
+      },
+      "executeOnce": true,
+      "id": "node-prep-monitiones",
+      "name": "Preparar Registros de Monitiones",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Monitiones",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_alerta": "={{ $json.id_alerta }}",
+            "fecha_envio": "={{ $json.fecha_envio }}",
+            "tipo": "={{ $json.tipo }}",
+            "mensaje": "={{ $json.mensaje }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "node-append-monitiones",
+      "name": "Registrar en Monitiones (Sheets)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2020,
+        380
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Diario 8:00 AM": {
+      "main": [
+        [
+          {
+            "node": "Leer Parametra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Parametra": {
+      "main": [
+        [
+          {
+            "node": "Leer Vectigalia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Vectigalia": {
+      "main": [
+        [
+          {
+            "node": "Leer Fides (Tarjetas)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Fides (Tarjetas)": {
+      "main": [
+        [
+          {
+            "node": "Leer Monitiones (Alertas Previas)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Monitiones (Alertas Previas)": {
+      "main": [
+        [
+          {
+            "node": "Engine de Alertas & Vencimientos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Engine de Alertas & Vencimientos": {
+      "main": [
+        [
+          {
+            "node": "¿Es Simulación?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es Simulación?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Despachar Alerta Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Despachar Alerta Telegram": {
+      "main": [
+        [
+          {
+            "node": "Preparar Registros de Monitiones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Registros de Monitiones": {
+      "main": [
+        [
+          {
+            "node": "Registrar en Monitiones (Sheets)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "name": "Synaps - Resumen de Quincena (Aerarium)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 14,28,29,30 * *"
+            }
+          ]
+        }
+      },
+      "id": "node-resumen-schedule",
+      "name": "Cron Días de Pago 8:00 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Parametra",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-parametra-resumen",
+      "name": "Leer Parametra",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        300,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Vectigalia",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-vectigalia-resumen",
+      "name": "Leer Vectigalia",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        500,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Acta",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-acta-resumen",
+      "name": "Leer Acta (Movimientos)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        700,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Solo ejecutar en días de pago de quincena (14 o 30 / último día de mes)\nconst now = new Date();\nconst todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });\nconst [y, m, d] = todayStr.split('-').map(Number);\nconst daysInMonth = new Date(y, m, 0).getDate();\n\nconst isPayDay14 = (d === 14);\nconst isPayDay30 = (d === Math.min(30, daysInMonth));\n\nif (!isPayDay14 && !isPayDay30) {\n  return []; // No es día de inicio de quincena\n}\n\nconst qLabel = isPayDay14 ? 'Q1' : 'Q2';\nconst quincenaTag = y + '-' + String(m).padStart(2, '0') + '-' + qLabel;\n\nconst parametra = $('Leer Parametra').all().map(i => i.json).filter(j => j && j.parametro);\nconst vectigalia = $('Leer Vectigalia').all().map(i => i.json).filter(j => j && j.id && j.activo === 'SI');\nconst acta = $('Leer Acta (Movimientos)').all().map(i => i.json).filter(j => j && j.tipo);\n\nconst chatId = parametra.find(p => p.parametro === 'telegram_chat_id')?.valor || '';\nconst ingresoEsperado = parseFloat(parametra.find(p => p.parametro === 'ingreso_quincenal_promedio')?.valor || 22200);\nconst pGasolina = parseFloat(parametra.find(p => p.parametro === 'presupuesto_gasolina_quincenal')?.valor || 1600);\nconst pPersonales = parseFloat(parametra.find(p => p.parametro === 'presupuesto_personales_quincenal')?.valor || 3000);\nconst presupuestoVariableTotal = pGasolina + pPersonales;\nconst umbralMargenMin = parseFloat(parametra.find(p => p.parametro === 'umbral_margen_minimo')?.valor || 1500);\n\n// Calcular compromisos fijos que caen en esta ventana quincenal\n// Ventana Q1: del 14 al 29.\n// Ventana Q2: del 30 al 13 del siguiente mes.\nconst compromisosVentana = [];\nlet totalFijosQuincena = 0;\n\nfor (const item of vectigalia) {\n  if (item.tipo !== 'gasto') continue;\n  const rawDias = String(item.dia || '').split(',').map(s => s.trim().toLowerCase());\n  const monto = parseFloat(item.monto || 0);\n\n  for (const rawD of rawDias) {\n    if (!rawD) continue;\n    let diaNum = (rawD === 'ultimo') ? daysInMonth : parseInt(rawD);\n    if (isNaN(diaNum)) continue;\n\n    let caeEnVentana = false;\n    if (isPayDay14) {\n      caeEnVentana = (diaNum >= 14 && diaNum <= 29);\n    } else {\n      caeEnVentana = (diaNum >= 30 || diaNum <= 13);\n    }\n\n    if (caeEnVentana) {\n      compromisosVentana.push({\n        concepto: item.concepto,\n        dia: diaNum,\n        monto: monto\n      });\n      totalFijosQuincena += monto;\n    }\n  }\n}\n\n// Margen proyectado de maniobra\nconst margenEstimado = ingresoEsperado - totalFijosQuincena - presupuestoVariableTotal;\n\nlet alertaMargen = '';\nif (margenEstimado < umbralMargenMin) {\n  alertaMargen = '⚠️ *ALERTA MARGEN BAJO:* Margen proyectado de $' + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' está por debajo del umbral mínimo de $' + umbralMargenMin.toLocaleString('es-MX') + '. Revisa o modera tu gasto variable.';\n} else {\n  alertaMargen = '🟢 *Margen Saludable:* Tienes margen libre estimado de $' + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' para contingencias o ahorro extra.';\n}\n\nconst listaCompromisosStr = compromisosVentana.map(c => '  ▫️ ' + c.concepto + ' (día ' + c.dia + '): $' + c.monto.toLocaleString('es-MX', {minimumFractionDigits: 2})).join('\\n');\n\nconst mensaje = \"🏛️ *Synaps Aerarium — Balance de Quincena (\" + qLabel + \")*\\n━━━━━━━━━━━━━━━━━━━━\\n\" +\n  \"📅 *Periodo:* `\" + quincenaTag + \"`\\n\" +\n  \"💵 *Ingreso Esperado:* $\" + ingresoEsperado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"\\n\\n\" +\n  \"📌 *Compromisos Fijos de la Quincena ($\" + totalFijosQuincena.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"):*\\n\" +\n  (listaCompromisosStr || '  ▫️ Sin compromisos fijos en esta ventana') + \"\\n\\n\" +\n  \"🛒 *Presupuestos Variables Apartados:* $\" + presupuestoVariableTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"\\n\" +\n  \"  ▫️ Gasolina: $\" + pGasolina.toLocaleString('es-MX') + \"\\n\" +\n  \"  ▫️ Personales: $\" + pPersonales.toLocaleString('es-MX') + \"\\n\\n\" +\n  \"━━━━━━━━━━━━━━━━━━━━\\n\" +\n  \"💰 *MARGEN ESTIMADO DE MANIOBRA:*\\n👉 *$\" + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \" MXN*\\n\\n\" +\n  alertaMargen + \"\\n━━━━━━━━━━━━━━━━━━━━\\n_Tabula Financia — Resumen Quincenal._\";\n\nreturn [{\n  json: {\n    chat_id: chatId,\n    quincena: quincenaTag,\n    ingreso: ingresoEsperado,\n    fijos: totalFijosQuincena,\n    variables: presupuestoVariableTotal,\n    margen: margenEstimado,\n    mensaje: mensaje\n  }\n}];"
+      },
+      "executeOnce": true,
+      "id": "node-engine-resumen",
+      "name": "Engine Resumen Quincenal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.mensaje }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-send-resumen",
+      "name": "Despachar Resumen Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1140,
+        280
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Días de Pago 8:00 AM": {
+      "main": [
+        [
+          {
+            "node": "Leer Parametra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Parametra": {
+      "main": [
+        [
+          {
+            "node": "Leer Vectigalia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Vectigalia": {
+      "main": [
+        [
+          {
+            "node": "Leer Acta (Movimientos)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Acta (Movimientos)": {
+      "main": [
+        [
+          {
+            "node": "Engine Resumen Quincenal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Engine Resumen Quincenal": {
+      "main": [
+        [
+          {
+            "node": "Despachar Resumen Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

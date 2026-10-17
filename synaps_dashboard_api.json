@@ -1,0 +1,261 @@
+{
+  "name": "Synaps - API Dashboard (Aerarium)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "aerarium-data",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET,OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type,Authorization"
+              }
+            ]
+          }
+        }
+      },
+      "id": "node-webhook-dashboard",
+      "name": "Webhook Aerarium Data",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        160,
+        300
+      ],
+      "webhookId": "aerarium-data"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Parametra",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-parametra-dash",
+      "name": "Leer Parametra",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Vectigalia",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-vectigalia-dash",
+      "name": "Leer Vectigalia",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        580,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Fides",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-fides-dash",
+      "name": "Leer Fides (Tarjetas)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Acta",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-acta-dash",
+      "name": "Leer Acta (Movimientos)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        980,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// =========================================================================\n// SYNAPS AERARIUM — GENERADOR DE PAYLOAD PARA DASHBOARD PWA\n// =========================================================================\n\nconst parametra = $('Leer Parametra').all().map(i => i.json).filter(j => j && j.parametro);\nconst vectigalia = $('Leer Vectigalia').all().map(i => i.json).filter(j => j && j.id && j.activo === 'SI');\nconst fides = $('Leer Fides (Tarjetas)').all().map(i => i.json).filter(j => j && j.tarjeta);\nconst acta = $('Leer Acta (Movimientos)').all().map(i => i.json).filter(j => j && j.tipo);\n\n// Fecha actual en America/Mexico_City\nconst now = new Date();\nconst mxDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });\nconst mxTimeStr = now.toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour12: false });\nconst [year, monthStr, dayStr] = mxDateStr.split('-');\nconst currentYear = parseInt(year);\nconst currentMonth = parseInt(monthStr);\nconst currentDay = parseInt(dayStr);\nconst daysInMonth = new Date(currentYear, currentMonth, 0).getDate();\n\n// Identificar quincena\nlet quincenaTag = '';\nlet isQ1 = false;\nlet diasRestantes = 0;\n\nif (currentDay >= 14 && currentDay <= 29) {\n  quincenaTag = currentYear + '-' + String(currentMonth).padStart(2, '0') + '-Q1';\n  isQ1 = true;\n  diasRestantes = 29 - currentDay;\n} else if (currentDay >= 30) {\n  quincenaTag = currentYear + '-' + String(currentMonth).padStart(2, '0') + '-Q2';\n  isQ1 = false;\n  diasRestantes = (daysInMonth - currentDay) + 13;\n} else {\n  let prevMonth = currentMonth - 1;\n  let prevYear = currentYear;\n  if (prevMonth === 0) {\n    prevMonth = 12;\n    prevYear = currentYear - 1;\n  }\n  quincenaTag = prevYear + '-' + String(prevMonth).padStart(2, '0') + '-Q2';\n  isQ1 = false;\n  diasRestantes = 13 - currentDay;\n}\n\n// Dias totales y transcurridos\nlet diasTotales = 0;\nlet diasTranscurridos = 0;\n\nif (isQ1) {\n  diasTotales = 16;\n  diasTranscurridos = (currentDay - 14) + 1;\n} else if (currentDay >= 30) {\n  const diasMesFin = (daysInMonth - 30) + 1;\n  diasTotales = diasMesFin + 13;\n  diasTranscurridos = (currentDay - 30) + 1;\n} else {\n  let prevMonthDays = new Date(currentYear, currentMonth - 1, 0).getDate();\n  const diasMesFin = (prevMonthDays - 30) + 1;\n  diasTotales = diasMesFin + 13;\n  diasTranscurridos = diasMesFin + currentDay;\n}\ndiasTranscurridos = Math.max(1, diasTranscurridos);\nconst diasRestantesCalc = Math.max(1, diasRestantes);\n\n// Presupuestos base\nconst pGasolina = parseFloat(parametra.find(p => p.parametro === 'presupuesto_gasolina_quincenal')?.valor || 1600);\nconst pPersonales = parseFloat(parametra.find(p => p.parametro === 'presupuesto_personales_quincenal')?.valor || 3000);\nconst sueldoEsperado = parseFloat(parametra.find(p => p.parametro === 'ingreso_quincenal_promedio')?.valor || 22200);\nconst umbralMargenMin = parseFloat(parametra.find(p => p.parametro === 'umbral_margen_minimo')?.valor || 1500);\n\n// Gastos e ingresos de la quincena actual en Acta\nconst actaQuincena = acta.filter(r => r.quincena === quincenaTag);\nconst gGas = actaQuincena.filter(r => r.tipo === 'gasto' && r.categoria === 'Transporte').reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);\nconst gPer = actaQuincena.filter(r => r.tipo === 'gasto' && r.categoria === 'Personales').reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);\nconst gOtrosVar = actaQuincena.filter(r => r.tipo === 'gasto' && r.categoria !== 'Transporte' && r.categoria !== 'Personales').reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);\nconst totalVarConsumido = gGas + gPer + gOtrosVar;\n\nconst ingresosExtras = actaQuincena.filter(r => r.tipo === 'ingreso' && r.concepto !== 'Sueldo Quincenal').reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);\nconst totalIngresos = sueldoEsperado + ingresosExtras;\n\n// Compromisos fijos de la quincena en Vectigalia\nlet compromisosFijosTotal = 0;\nconst compromisosLista = [];\n\nfor (const item of vectigalia) {\n  if (item.tipo !== 'gasto') continue;\n  const monto = parseFloat(item.monto || 0);\n  const rawDias = String(item.dia || '').split(',').map(s => s.trim().toLowerCase());\n  \n  let caeEnEstaQuincena = false;\n  for (const rd of rawDias) {\n    let dNum = (rd === 'ultimo') ? daysInMonth : parseInt(rd);\n    if (isNaN(dNum)) continue;\n    if (isQ1 && dNum >= 14 && dNum <= 29) {\n      caeEnEstaQuincena = true;\n    } else if (!isQ1 && (dNum >= 30 || dNum <= 13)) {\n      caeEnEstaQuincena = true;\n    }\n  }\n\n  if (caeEnEstaQuincena) {\n    compromisosFijosTotal += monto;\n  }\n\n  compromisosLista.push({\n    id: item.id,\n    concepto: item.concepto,\n    monto: monto,\n    frecuencia: item.frecuencia,\n    dia: item.dia,\n    categoria: item.categoria,\n    cuenta: item.cuenta,\n    es_deuda: item.es_deuda === 'SI',\n    cae_en_quincena_actual: caeEnEstaQuincena\n  });\n}\n\n// Margen real proyectado\nconst margenProyectado = totalIngresos - compromisosFijosTotal - totalVarConsumido;\nconst margenDisponible = Math.round(margenProyectado * 100) / 100;\nconst estadoMargen = margenDisponible < umbralMargenMin ? 'ALERTA_BAJO' : 'SALUDABLE';\n\n// Burn rate Gasolina\nconst dispGas = Math.max(0, pGasolina - gGas);\nconst ritmoGasSugerido = Math.round(dispGas / diasRestantesCalc);\nconst ritmoGasActual = Math.round(gGas / diasTranscurridos);\nconst pctGas = Math.round((gGas / pGasolina) * 100);\n\n// Burn rate Personales\nconst dispPer = Math.max(0, pPersonales - gPer);\nconst ritmoPerSugerido = Math.round(dispPer / diasRestantesCalc);\nconst ritmoPerActual = Math.round(gPer / diasTranscurridos);\nconst pctPer = Math.round((gPer / pPersonales) * 100);\n\n// Tarjetas Fides con cálculo de días restantes\nconst hoyDate = new Date(currentYear, currentMonth - 1, currentDay);\nconst tarjetasFides = fides.map(c => {\n  const saldo = parseFloat(c.saldo_pago_sin_intereses || 0);\n  let diffDays = null;\n  if (c.fecha_limite) {\n    const [cy, cm, cd] = c.fecha_limite.split('-').map(Number);\n    const flDate = new Date(cy, cm - 1, cd);\n    diffDays = Math.round((flDate - hoyDate) / (1000 * 60 * 60 * 24));\n  }\n  return {\n    tarjeta: c.tarjeta,\n    saldo: saldo,\n    fecha_limite: c.fecha_limite,\n    pagada: c.pagada === 'SI',\n    dias_restantes: diffDays\n  };\n});\n\n// Últimos 20 movimientos de Acta\nconst ultimosMovimientos = acta.slice(-20).reverse().map(r => ({\n  fecha: r.fecha,\n  tipo: r.tipo,\n  concepto: r.concepto,\n  monto: parseFloat(r.monto || 0),\n  categoria: r.categoria,\n  quincena: r.quincena,\n  origen: r.origen\n}));\n\nreturn [{\n  json: {\n    status: 'success',\n    timestamp: mxDateStr + ' ' + mxTimeStr,\n    quincena: {\n      tag: quincenaTag,\n      is_q1: isQ1,\n      dias_totales: diasTotales,\n      dias_transcurridos: diasTranscurridos,\n      dias_restantes: diasRestantes,\n      porcentaje_tiempo: Math.round((diasTranscurridos / diasTotales) * 100)\n    },\n    resumen_financiero: {\n      ingreso_esperado: sueldoEsperado,\n      ingresos_extras: ingresosExtras,\n      total_ingresos: totalIngresos,\n      compromisos_fijos_quincena: compromisosFijosTotal,\n      presupuesto_variable_total: pGasolina + pPersonales,\n      gasto_variable_consumido: totalVarConsumido,\n      margen_proyectado: margenDisponible,\n      estado_margen: estadoMargen\n    },\n    presupuestos_variables: {\n      gasolina: {\n        presupuesto: pGasolina,\n        consumido: gGas,\n        disponible: dispGas,\n        porcentaje: pctGas,\n        ritmo_actual: ritmoGasActual,\n        ritmo_sugerido: ritmoGasSugerido,\n        alerta_agotamiento: diasTranscurridos >= 2 && ritmoGasActual > ritmoGasSugerido && dispGas > 0\n      },\n      personales: {\n        presupuesto: pPersonales,\n        consumido: gPer,\n        disponible: dispPer,\n        porcentaje: pctPer,\n        ritmo_actual: ritmoPerActual,\n        ritmo_sugerido: ritmoPerSugerido,\n        alerta_agotamiento: diasTranscurridos >= 2 && ritmoPerActual > ritmoPerSugerido && dispPer > 0\n      }\n    },\n    tarjetas_fides: tarjetasFides,\n    compromisos_vectigalia: compromisosLista,\n    ultimos_movimientos: ultimosMovimientos\n  }\n}];"
+      },
+      "executeOnce": true,
+      "id": "node-prep-dashboard-payload",
+      "name": "Generar Payload Dashboard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET,OPTIONS,POST"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "node-respond-webhook",
+      "name": "Responder JSON Dashboard",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1400,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Aerarium Data": {
+      "main": [
+        [
+          {
+            "node": "Leer Parametra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Parametra": {
+      "main": [
+        [
+          {
+            "node": "Leer Vectigalia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Vectigalia": {
+      "main": [
+        [
+          {
+            "node": "Leer Fides (Tarjetas)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Fides (Tarjetas)": {
+      "main": [
+        [
+          {
+            "node": "Leer Acta (Movimientos)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Acta (Movimientos)": {
+      "main": [
+        [
+          {
+            "node": "Generar Payload Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Payload Dashboard": {
+      "main": [
+        [
+          {
+            "node": "Responder JSON Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

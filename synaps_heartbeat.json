@@ -1,0 +1,158 @@
+{
+  "name": "Synaps - Heartbeat (Aerarium)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "node-heartbeat-schedule",
+      "name": "Cron Lunes 9:00 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Parametra",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-parametra-hb",
+      "name": "Leer Parametra",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Monitiones",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-monitiones-hb",
+      "name": "Leer Monitiones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const parametra = $('Leer Parametra').all().map(i => i.json).filter(j => j && j.parametro);\nconst monitiones = $('Leer Monitiones').all().map(i => i.json).filter(j => j && j.id_alerta);\n\nconst chatIdConfig = parametra.find(p => p.parametro === 'telegram_chat_id')?.valor || '';\n\n// Hora CDMX estricta\nconst now = new Date();\nconst nowStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }) + ' ' + now.toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City' });\n\nlet ultimaAlertaStr = 'Sin alertas registradas aún';\nif (monitiones.length > 0) {\n  const ultima = monitiones[monitiones.length - 1];\n  ultimaAlertaStr = (ultima.fecha_envio || 'N/A') + ' (ID: ' + (ultima.id_alerta || 'N/A') + ')';\n}\n\nconst mensajeTelegram = \"💓 *Synaps Aerarium — Heartbeat Semanal*\\n━━━━━━━━━━━━━━━━━━━━\\n\" +\n  \"✅ *Estado:* Sistema vivo y operando.\\n\" +\n  \"🕒 *Pulso:* \" + nowStr + \"\\n\" +\n  \"📡 *Última alerta en Monitiones:*\\n_\" + ultimaAlertaStr + \"_\\n\" +\n  \"━━━━━━━━━━━━━━━━━━━━\\n_Oracle Cloud + n8n + Aerarium 100% operativos._\";\n\nreturn [{\n  json: {\n    chat_id: chatIdConfig,\n    mensaje: mensajeTelegram\n  }\n}];"
+      },
+      "executeOnce": true,
+      "id": "node-prep-heartbeat",
+      "name": "Preparar Heartbeat",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.mensaje }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-hb-send",
+      "name": "Despachar Heartbeat Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Lunes 9:00 AM": {
+      "main": [
+        [
+          {
+            "node": "Leer Parametra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Parametra": {
+      "main": [
+        [
+          {
+            "node": "Leer Monitiones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Monitiones": {
+      "main": [
+        [
+          {
+            "node": "Preparar Heartbeat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Heartbeat": {
+      "main": [
+        [
+          {
+            "node": "Despachar Heartbeat Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

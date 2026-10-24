@@ -45,47 +45,84 @@ git push origin main
 
 ## 🔍 Paso 3: Verificar la propiedad del dominio en Google Search Console
 
-Google exige que demuestres ser el dueño de la URL principal:
+Google exige que demuestres ser el dueño de la URL de tu app:
 
-1. Entra a: [search.google.com/search-console](https://search.google.com/search-console) (con tu cuenta `crhis.robles@gmail.com`).
+1. Entra a: [search.google.com/search-console](https://search.google.com/search-console) (con la misma cuenta de Google dueña del proyecto de Google Cloud).
 2. En la esquina superior izquierda, haz clic en el selector de propiedades ➔ **+ Añadir propiedad**.
-3. En el cuadro de la derecha (**Prefijo de la URL**), pega:
+3. En el cuadro de la derecha (**Prefijo de la URL**), pega la URL exacta de tu repositorio:
    ```text
-   https://crhisrob99.github.io/synaps-aerarium/
+   https://tu-usuario.github.io/tu-repositorio/
    ```
+   *(Ejemplo: `https://crhisrob99.github.io/synaps-aerarium/`)*
 4. Haz clic en **Continuar**.
-5. Como estás usando tu cuenta de Google y GitHub Pages, Google verificará la propiedad de forma inmediata (o te dará un archivo HTML / etiqueta que puedes poner). En la mayoría de los casos se aprueba al instante.
+5. Te mostrará el método recomendado: **Archivo HTML** (ejemplo: `google17e9bc6a229b9650.html`):
+   * Crea ese archivo dentro de la carpeta `docs/` con el contenido:
+     ```text
+     google-site-verification: google17e9bc6a229b9650.html
+     ```
+   * Súbelo a GitHub:
+     ```powershell
+     git add docs/google*.html
+     git commit -m "chore: add Google Search Console verification file"
+     git push origin main
+     ```
+   * Espera 30 segundos a que GitHub Pages lo publique y haz clic en el botón azul **VERIFICAR**.
+   * Verás la confirmación en verde: **"Se ha verificado la propiedad"**.
 
 ---
 
 ## ⚙️ Paso 4: Configurar Google Cloud Console
 
-Entra a tu proyecto en Google Cloud: [console.cloud.google.com/auth/overview?project=crhis-n8n-oracle](https://console.cloud.google.com/auth/overview?project=crhis-n8n-oracle).
+Entra a: [console.cloud.google.com/auth/overview](https://console.cloud.google.com/auth/overview).
 
-### 4.1 En la pestaña "Desarrollo de la marca" (Branding):
-* **Nombre de la app:** `Synapse Vertex Automation` *(no uses "n8n" ni "Oracle" para evitar rechazos)*.
-* **Correo de asistencia al usuario:** `crhis.robles@gmail.com`.
-* **Logotipo de la app:** **DEJAR VACÍO** *(no subas imagen para evitar la revisión de marca obligatoria)*.
+### 4.1 En la pestaña "Información de la marca" (Branding):
+* **Nombre de la app:** `Synapse Vertex Automation` *(no uses marcas registradas como "n8n", "Google" u "Oracle" para evitar bloqueos)*.
+* **Correo de asistencia al usuario:** Tu correo Gmail.
+* **Logotipo de la app:** **DEJAR VACÍO** *(muy importante: si subes un logo, Google fuerza una auditoría manual de marca de 3 a 5 días hábiles)*.
 * **Página principal de la app:**  
-  `https://crhisrob99.github.io/synaps-aerarium/`
+  `https://tu-usuario.github.io/tu-repositorio/`
 * **Vínculo a la política de privacidad:**  
-  `https://crhisrob99.github.io/synaps-aerarium/privacy.html`
+  `https://tu-usuario.github.io/tu-repositorio/privacy.html`
 * **Vínculo a las condiciones del servicio:**  
-  `https://crhisrob99.github.io/synaps-aerarium/terms.html`
+  `https://tu-usuario.github.io/tu-repositorio/terms.html`
 * **Dominios autorizados:**  
-  Agrega `github.io`.
-* **Datos de contacto del desarrollador:**  
-  `crhis.robles@gmail.com`.
+  ⚠️ **IMPORTANTE:** Google rechazará `github.io` a secas porque es un sufijo público. Debes ingresar tu subdominio privado:
+  ```text
+  tu-usuario.github.io
+  ```
+  *(Ejemplo: `crhisrob99.github.io` — sin `https://` ni barras `/`)*.
+* **Datos de contacto del desarrollador:** Tu correo Gmail.
 * Haz clic en **Guardar**.
 
 ### 4.2 En la pestaña "Público" (Audience):
-1. Verás el botón **Publicar app**.
-2. Haz clic en **Publicar app** y confirma el cambio al modo **Producción**.
+1. Verás el **Estado de publicación** (*Publishing status*): dice actualmente **En prueba** (*Testing*).
+2. Haz clic en el botón **`PUBLICAR APP`** (*Publish app*).
+3. Confirma en la ventana emergente.
+4. El estado cambiará a **`En producción`**.
+
+> [!NOTE]
+> **Sobre el aviso de "Problemas encontrados en el intento de verificación anterior":**
+> Si ves ese banner histórico o advertencias en el *Centro de verificación*, no te preocupes: es un registro histórico del intento previo y Google Cloud actualiza su caché en segundo plano. Al estar ya **En producción**, la regla de caducidad de 7 días queda **completamente eliminada**.
 
 ---
 
-## 🛡️ Resultado Final
+## 🔄 Paso 5: Renovar Tokens en n8n a Modo Producción
 
-* **Tokens Permanentes:** Tus conexiones de Google Sheets, Google Drive y servicios de Google en n8n **ya no caducarán cada 7 días**.
-* **Cumplimiento Total:** Tu landing page y política de privacidad están hospedadas de por vida en GitHub Pages de forma gratuita.
-* **Seguridad Absoluta:** Tu instancia de n8n en Oracle Cloud permanece completamente privada y protegida.
+Como las conexiones previas se crearon en modo "Prueba", sus tokens aún tienen fecha de expiración. Para renovarlos a tokens permanentes:
+
+1. Entra a tu instancia de **n8n** ➔ Menú lateral ➔ **Credentials**.
+2. Para cada una de tus credenciales de Google OAuth (Google Sheets, Google Drive, Gmail personal, etc.):
+   * Haz clic sobre la credencial.
+   * Haz clic en el botón **`Switch account`** (o reconectar).
+   * Inicia sesión con la cuenta correspondiente.
+   * Si Google muestra *"Google no ha verificado esta app"*, haz clic en **Configuración avanzada** ➔ **Ir a Synapse Vertex Automation (no seguro)** ➔ **Continuar**.
+   * Haz clic en **`Save`** en n8n.
+3. Listo: n8n habrá recibido un *Refresh Token* permanente de producción.
+
+---
+
+## 🛡️ Resumen y Beneficios
+
+* **Tokens Permanentes:** Ningún flujo de Google Sheets, Drive o Gmail volverá a desconectarse tras 7 días.
+* **Alojamiento Gratuito de por Vida:** GitHub Pages aloja la landing, políticas y términos sin costo ni mantenimiento.
+* **Seguridad y Privacidad:** Tu n8n y tu infraestructura de base de datos se mantienen 100% privadas.

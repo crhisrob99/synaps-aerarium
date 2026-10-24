@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapse Vertex Automation — Intelligent Personal & Academic Automation</title>
+  
+  <meta name="description" content="Official home page for Synapse Vertex Automation. An automated workflow ecosystem connecting Google Workspace APIs with intelligent personal and academic assistance.">
+  <link rel="icon" type="image/png" href="Vertex.png">
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-base: #07090e;
+      --bg-surface: #0e131f;
+      --bg-card: rgba(18, 25, 41, 0.75);
+      --bg-card-hover: rgba(26, 36, 58, 0.9);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.28);
+      
+      --cyan-core: #38bdf8;
+      --cyan-neon: #00f0ff;
+      --blue-electric: #0284c7;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Ambient Background Glow */
+    .ambient-glow {
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(7, 9, 14, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(16px);
+      background: rgba(7, 9, 14, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 50;
+      padding: 1rem 2rem;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand img {
+      width: 38px;
+      height: 38px;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));
+    }
+
+    .brand-name {
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid var(--border-glow);
+      color: var(--cyan-core);
+      font-size: 0.72rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--cyan-neon);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem 6rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      text-align: center;
+      max-width: 860px;
+      margin: 0 auto 5rem;
+    }
+
+    .hero-tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(14, 19, 31, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      padding: 0.4rem 1.1rem;
+      font-size: 0.85rem;
+      color: var(--cyan-core);
+      margin-bottom: 1.75rem;
+      font-family: var(--font-mono);
+    }
+
+    .hero h1 {
+      font-size: 3.25rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #ffffff 30%, var(--cyan-core) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+
+    .cta-row {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .btn {
+      padding: 0.85rem 1.75rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan-core) 0%, var(--blue-electric) 100%);
+      color: #07090e;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.55);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--cyan-core);
+      transform: translateY(-2px);
+    }
+
+    /* Modules Grid */
+    .section-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      text-align: center;
+    }
+
+    .section-subtitle {
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 3rem;
+      font-size: 1rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.75rem;
+      margin-bottom: 5rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .card:hover {
+      border-color: var(--border-glow);
+      background: var(--bg-card-hover);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 1.25rem;
+      display: inline-block;
+    }
+
+    .card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .card-badge {
+      display: inline-block;
+      margin-top: 1.25rem;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--cyan-core);
+      background: rgba(56, 189, 248, 0.08);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+    }
+
+    /* Architecture / Compliance Banner */
+    .compliance-box {
+      background: linear-gradient(135deg, rgba(14, 19, 31, 0.9) 0%, rgba(18, 25, 41, 0.7) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      text-align: center;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .compliance-box h2 {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .compliance-box p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 760px;
+      margin: 0 auto 1.75rem;
+      line-height: 1.7;
+    }
+
+    .compliance-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      padding: 3rem 1.5rem;
+      margin-top: auto;
+    }
+
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .footer-left p {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.75rem;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--cyan-neon);
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.25rem; }
+      .nav-links { display: none; }
+      .footer-container { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-glow"></div>
+
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <img src="Vertex.png" alt="Synapse Vertex Logo">
+        <span class="brand-name">Synapse Vertex</span>
+        <span class="brand-badge">Automation Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#modules">Ecosystem Modules</a>
+        <a href="#compliance">Security & Privacy</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-tagline">
+        <span>⚡</span> Private Self-Hosted Workflow Automation
+      </div>
+      <h1>Synapse Vertex Automation</h1>
+      <p>
+        An integrated personal automation and intelligence platform. Connecting Google Workspace APIs (Google Sheets, Drive, and Academic Notifications) to high-precision alert pipelines, real-time budgeting ledgers, and family communication channels.
+      </p>
+      <div class="cta-row">
+        <a href="privacy.html" class="btn btn-primary">Review Privacy Policy →</a>
+        <a href="terms.html" class="btn btn-secondary">Terms of Service</a>
+      </div>
+    </section>
+
+    <section id="modules">
+      <h2 class="section-title">Ecosystem Capabilities</h2>
+      <p class="section-subtitle">Private automated workflows engineered for precision, privacy, and continuous execution.</p>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-icon">🏛️</div>
+          <h3>Aerarium — Ledger & Cash Flow</h3>
+          <p>
+            Connects securely to Google Sheets to manage personal recurring commitments, variable expense tracking, burn rate pacing, and credit card due dates.
+          </p>
+          <span class="card-badge">Google Sheets API</span>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🎓</div>
+          <h3>Paideia — Academic Dispatcher</h3>
+          <p>
+            Monitors Google Classroom notifications to parse assignments, announcements, and schedules with AI summarization, delivering instant alerts directly to WhatsApp.
+          </p>
+          <span class="card-badge">Academic Email Webhooks</span>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3>Sentinel — System Heartbeat</h3>
+          <p>
+            Continuous health monitor and error handler running 24/7 on private cloud infrastructure to guarantee system integrity, uptime, and secure execution.
+          </p>
+          <span class="card-badge">Autonomous Cloud Engine</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="compliance" class="compliance-box">
+      <h2>Privacy & Compliance First</h2>
+      <p>
+        Synapse Vertex Automation operates exclusively as an authorized, private automation suite developed by <strong>Crhis Robles</strong>. Data accessed via Google APIs is never shared with third parties, never monetized, never used for advertising, and strictly processed in real-time within self-hosted private servers.
+      </p>
+      <div class="compliance-pills">
+        <span class="pill">🔒 Google API Limited Use Compliant</span>
+        <span class="pill">🛡️ Zero Advertising & No Data Resale</span>
+        <span class="pill">⚡ End-to-End Private Execution</span>
+        <span class="pill">📜 Granular OAuth2 Access Control</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-left">
+        <p>© 2026 <strong>Synapse Vertex Automation</strong>. Developed by Crhis Robles.</p>
+        <p style="font-size: 0.8rem; margin-top: 0.25rem;">Contact & Support: <a href="mailto:crhis.robles@gmail.com" style="color: var(--cyan-core); text-decoration: none;">crhis.robles@gmail.com</a></p>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Synapse Vertex Automation</title>
+  
+  <meta name="description" content="Privacy Policy for Synapse Vertex Automation. Outlines how user data is accessed, processed, and safeguarded under Google API Limited Use requirements.">
+  <link rel="icon" type="image/png" href="Vertex.png">
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-base: #07090e;
+      --bg-surface: #0e131f;
+      --bg-card: rgba(18, 25, 41, 0.75);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.28);
+      
+      --cyan-core: #38bdf8;
+      --cyan-neon: #00f0ff;
+      --blue-electric: #0284c7;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-main);
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(16px);
+      background: rgba(7, 9, 14, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 50;
+      padding: 1rem 2rem;
+    }
+
+    .nav-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand img {
+      width: 34px;
+      height: 34px;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));
+    }
+
+    .brand-name {
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover { color: var(--cyan-neon); }
+
+    main {
+      flex: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 6rem;
+    }
+
+    .doc-header {
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .doc-header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #ffffff 40%, var(--cyan-core) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .doc-header p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      font-family: var(--font-mono);
+    }
+
+    .policy-content h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .policy-content h2::before {
+      content: "§";
+      color: var(--cyan-core);
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+    }
+
+    .policy-content p, .policy-content li {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .policy-content ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .policy-content li { margin-bottom: 0.5rem; }
+
+    .highlight-card {
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .highlight-card p {
+      color: #e2e8f0;
+      font-weight: 500;
+      margin-bottom: 0;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      padding: 2.5rem 1.5rem;
+      margin-top: auto;
+    }
+
+    .footer-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-container p { color: var(--text-dim); font-size: 0.85rem; }
+    .footer-container a { color: var(--cyan-core); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <img src="Vertex.png" alt="Synapse Vertex Logo">
+        <span class="brand-name">Synapse Vertex Automation</span>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html">← Back to Home</a>
+        <a href="terms.html">Terms of Service</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="doc-header">
+      <h1>Privacy Policy</h1>
+      <p>Application: Synapse Vertex Automation | Effective Date: October 24, 2026 | Last Updated: October 2026</p>
+    </div>
+
+    <div class="policy-content">
+      <p>
+        This Privacy Policy explains how <strong>Synapse Vertex Automation</strong> ("we", "us", or "our"), developed and maintained by <strong>Crhis Robles</strong>, accesses, collects, uses, and safeguards information when you connect your Google Account with our automated workflow system.
+      </p>
+
+      <div class="highlight-card">
+        <p>
+          <strong>Google API Limited Use Disclosure:</strong><br>
+          Synapse Vertex Automation's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" style="color: var(--cyan-core);">Google API Services User Data Policy</a>, including the Limited Use requirements.
+        </p>
+      </div>
+
+      <h2>1. Purpose of the Application</h2>
+      <p>
+        Synapse Vertex Automation is a private, self-hosted automation ecosystem built to streamline personal financial management and academic notification dispatching. It executes automated pipelines via a private instance of n8n hosted on dedicated cloud infrastructure (Oracle Cloud Infrastructure).
+      </p>
+
+      <h2>2. Google User Data We Access</h2>
+      <p>Depending on the specific workflow authorized by the account owner, Synapse Vertex Automation may access the following Google user data:</p>
+      <ul>
+        <li>
+          <strong>Google Sheets API (<code>https://www.googleapis.com/auth/spreadsheets</code>):</strong> Used exclusively to read, append, and update tabular records in the user's private financial workbook (<em>Aerarium — Tabula Financia</em>), including recurring expenses, categories, debt maturities, and balance pacing.
+        </li>
+        <li>
+          <strong>Google Drive API (<code>https://www.googleapis.com/auth/drive.file</code>):</strong> Used solely to access and manage the specific spreadsheets created by or explicitly opened with the application for backup and synchronization purposes.
+        </li>
+        <li>
+          <strong>Gmail API / Academic Notifications (<code>https://www.googleapis.com/auth/gmail.readonly</code>):</strong> Used exclusively to inspect incoming Google Classroom academic notifications (assignments, due dates, and course announcements) to generate structured alert summaries for authorized family communication channels (WhatsApp / Telegram).
+        </li>
+      </ul>
+
+      <h2>3. How We Use and Process Data</h2>
+      <p>All data retrieved from Google APIs is processed strictly according to the following principles:</p>
+      <ul>
+        <li><strong>Real-Time Pipeline Execution:</strong> Data is read in real time to perform mathematical calculations (e.g. burn rate, cash flow margins) or format text summaries.</li>
+        <li><strong>Zero Data Selling:</strong> We do not sell, rent, lease, or monetize user data under any circumstances.</li>
+        <li><strong>Zero Advertising & Profiling:</strong> User data is never used for advertising, behavioral profiling, marketing, or audience targeting.</li>
+        <li><strong>No Human Inspection:</strong> No human reads private email messages or spreadsheet data, except when the account owner directly inspects execution logs in their private administrative console for troubleshooting.</li>
+      </ul>
+
+      <h2>4. Data Sharing and Third-Party Transfer</h2>
+      <p>
+        We do not transfer or share your Google user data with any third parties, except in the following strictly limited circumstance:
+      </p>
+      <ul>
+        <li>
+          <strong>AI Summarization Subprocessors:</strong> Email notification text from Google Classroom may be transmitted via encrypted TLS API calls to the Google Gemini API (or Groq API failover) strictly for real-time text summarization and extraction of assignment deadlines. These subprocessors do not retain or use customer data to train generalized AI models.
+        </li>
+      </ul>
+
+      <h2>5. Data Storage, Security, and Retention</h2>
+      <p>
+        Synapse Vertex Automation is designed with a minimal data footprint architecture:
+      </p>
+      <ul>
+        <li><strong>No External Database Storage:</strong> Google user data is not permanently stored on external third-party servers. Your spreadsheet and email data remain securely stored within your own Google Account.</li>
+        <li><strong>Private Cloud Infrastructure:</strong> All automated workflow execution occurs on the developer's secured Oracle Cloud instance, protected by HTTPS/TLS encryption and strict key-based authentication.</li>
+        <li><strong>Temporary Log Retention:</strong> Workflow execution logs in n8n are automatically pruned and retained only for short-term operational debugging (maximum 7 days).</li>
+      </ul>
+
+      <h2>6. How to Revoke Access and Delete Data</h2>
+      <p>You have full control over the permissions granted to Synapse Vertex Automation at all times:</p>
+      <ul>
+        <li>
+          You can revoke access immediately at any time by visiting your Google Account Permissions page: <a href="https://myaccount.google.com/permissions" target="_blank" style="color: var(--cyan-core);">https://myaccount.google.com/permissions</a>.
+        </li>
+        <li>
+          Upon revoking access, our application permanently loses the ability to access any Google APIs or refresh access tokens.
+        </li>
+      </ul>
+
+      <h2>7. Contact and Support</h2>
+      <p>
+        If you have any questions, concerns, or requests regarding this Privacy Policy or the security of your data, please contact the developer directly:
+      </p>
+      <p>
+        <strong>Developer:</strong> Crhis Robles<br>
+        <strong>Project:</strong> Synapse Vertex Automation<br>
+        <strong>Email:</strong> <a href="mailto:crhis.robles@gmail.com" style="color: var(--cyan-core);">crhis.robles@gmail.com</a>
+      </p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>© 2026 Synapse Vertex Automation. Developed by Crhis Robles.</p>
+      <div>
+        <a href="index.html">Home</a> &nbsp;|&nbsp;
+        <a href="terms.html">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

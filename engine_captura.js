@@ -85,7 +85,7 @@ if (/^(ayuda|comandos|help|\/help|\/start)$/i.test(textNorm)) {
     "▫️ `extra 1500 bono` / `ingreso 2000 freelance`\n\n" +
     "📊 *Consultas al Vuelo:*\n" +
     "▫️ `resumen` o `cómo voy` — Estado de presupuestos y balance\n" +
-    "▫️ `deshacer` — Elimina el último movimiento registrado en Acta\n\n" +
+    "▫️ `deshacer` — Elimina el último movimiento registrado en Acta (verificado)\n\n" +
     "💳 *Control de Tarjetas de Crédito:*\n" +
     "▫️ `pagué bbva` / `pagué mp` — Marca pagada y apaga recordatorios\n" +
     "▫️ `no pagué bbva` — Reactiva alertas de vencimiento\n" +
@@ -114,7 +114,10 @@ if (/^(resumen|saldo|presupuesto|como\s+voy|balance)$/i.test(textNorm)) {
   const gastosQ = acta.filter(r => r.tipo === 'gasto' && r.quincena === quincenaTag);
   const gGas = gastosQ.filter(r => r.categoria === 'Transporte').reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
   const gPer = gastosQ.filter(r => r.categoria === 'Personales').reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
-  const gTotalVar = gGas + gPer;
+  
+  // Contar Hogar, Salud y Servicios variables como otros variables en el resumen
+  const gOtrosVar = gastosQ.filter(r => r.categoria !== 'Transporte' && r.categoria !== 'Personales').reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
+  const gTotalVar = gGas + gPer + gOtrosVar;
 
   const pctGas = Math.round((gGas / pGasolina) * 100);
   const pctPer = Math.round((gPer / pPersonales) * 100);
@@ -126,14 +129,11 @@ if (/^(resumen|saldo|presupuesto|como\s+voy|balance)$/i.test(textNorm)) {
   const semGas = (pctGas >= 100) ? '🚨' : (pctGas >= 80 ? '⚠️' : '🟢');
   const semPer = (pctPer >= 100) ? '🚨' : (pctPer >= 80 ? '⚠️' : '🟢');
 
-  // Ritmos diarios (Burn Rate)
-  const ritmoGasSugerido = Math.round(dispGas / diasRestantesCalc);
+  // Ritmo sugerido y burn rate SOLO para Personales (quitado para Gasolina)
   const ritmoPerSugerido = Math.round(dispPer / diasRestantesCalc);
-
-  const ritmoGasActual = Math.round(gGas / diasTranscurridos);
   const ritmoPerActual = Math.round(gPer / diasTranscurridos);
 
-  // Alertas predictivas de agotamiento anticipado
+  // Alertas predictivas de agotamiento anticipado: exclusivamente Personales
   let alertasPredictivas = [];
 
   if (diasTranscurridos >= 2 && dispPer > 0 && gPer > 0) {
@@ -143,17 +143,6 @@ if (/^(resumen|saldo|presupuesto|como\s+voy|balance)$/i.test(textNorm)) {
         const agotamientoDate = new Date(now.getTime() + diasParaAgotar * 24 * 60 * 60 * 1000);
         const fechaStr = agotamientoDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' });
         alertasPredictivas.push('⚠️ *Ritmo alto en Personales:* Gastas ~$' + ritmoPerActual + '/día. A este paso se agota el *' + fechaStr + '* (' + diasParaAgotar + ' días). Modera a *$' + ritmoPerSugerido + '/día*.');
-      }
-    }
-  }
-
-  if (diasTranscurridos >= 2 && dispGas > 0 && gGas > 0) {
-    if (ritmoGasActual > ritmoGasSugerido) {
-      const diasParaAgotar = Math.floor(dispGas / ritmoGasActual);
-      if (diasParaAgotar < diasRestantes) {
-        const agotamientoDate = new Date(now.getTime() + diasParaAgotar * 24 * 60 * 60 * 1000);
-        const fechaStr = agotamientoDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' });
-        alertasPredictivas.push('⚠️ *Ritmo alto en Gasolina:* Gastas ~$' + ritmoGasActual + '/día. A este paso se agota el *' + fechaStr + '* (' + diasParaAgotar + ' días). Modera a *$' + ritmoGasSugerido + '/día*.');
       }
     }
   }
@@ -173,10 +162,15 @@ if (/^(resumen|saldo|presupuesto|como\s+voy|balance)$/i.test(textNorm)) {
     "📅 *Periodo:* `" + quincenaTag + "` (Día " + diasTranscurridos + " de " + diasTotales + ")\n" +
     "⏳ *Corte quincenal:* Faltan *" + diasRestantes + " día(s)* (el " + finQuincenaTexto + ")\n\n" +
     semGas + " *Gasolina:* $" + gGas.toLocaleString('es-MX', {minimumFractionDigits: 2}) + " / $" + pGasolina.toLocaleString('es-MX') + " (" + pctGas + "%)\n" +
-    "   👉 *Disponible:* $" + dispGas.toLocaleString('es-MX', {minimumFractionDigits: 2}) + " | *Sugerido:* $" + ritmoGasSugerido + "/día\n\n" +
+    "   👉 *Disponible:* $" + dispGas.toLocaleString('es-MX', {minimumFractionDigits: 2}) + "\n\n" +
     semPer + " *Personales:* $" + gPer.toLocaleString('es-MX', {minimumFractionDigits: 2}) + " / $" + pPersonales.toLocaleString('es-MX') + " (" + pctPer + "%)\n" +
-    "   👉 *Disponible:* $" + dispPer.toLocaleString('es-MX', {minimumFractionDigits: 2}) + " | *Sugerido:* $" + ritmoPerSugerido + "/día\n\n" +
-    "🛒 *Total Variable Consumido:* $" + gTotalVar.toLocaleString('es-MX', {minimumFractionDigits: 2}) + " de $" + pTotal.toLocaleString('es-MX') + "\n";
+    "   👉 *Disponible:* $" + dispPer.toLocaleString('es-MX', {minimumFractionDigits: 2}) + " | *Sugerido:* $" + ritmoPerSugerido + "/día\n\n";
+
+  if (gOtrosVar > 0) {
+    resumenMsg += "📦 *Otros Variables (Hogar/Salud/Servicios):* $" + gOtrosVar.toLocaleString('es-MX', {minimumFractionDigits: 2}) + "\n\n";
+  }
+
+  resumenMsg += "🛒 *Total Variable Consumido:* $" + gTotalVar.toLocaleString('es-MX', {minimumFractionDigits: 2}) + " (Base Gasolina + Personales: $" + pTotal.toLocaleString('es-MX') + ")\n";
 
   if (alertasPredictivas.length > 0) {
     resumenMsg += "━━━━━━━━━━━━━━━━━━━━\n" + alertasPredictivas.join("\n\n") + "\n";
@@ -198,10 +192,12 @@ if (/^(resumen|saldo|presupuesto|como\s+voy|balance)$/i.test(textNorm)) {
 }
 
 // -------------------------------------------------------------------------
-// COMANDO: DESHACER / BORRAR ÚLTIMO
+// COMANDO: DESHACER / BORRAR ÚLTIMO (CON VERIFICACIÓN ESTRICTA DE FILA)
 // -------------------------------------------------------------------------
 if (/^\/?(deshacer|borrar|cancelar|undo)(\s+(ultimo|movimiento|gasto))?[\.\s]*$/i.test(textNorm)) {
-  if (acta.length === 0) {
+  const allActaRaw = $('Leer Acta (Movimientos)').all().map(i => i.json);
+
+  if (allActaRaw.length === 0 || acta.length === 0) {
     return [{
       json: {
         chat_id: incomingChatId,
@@ -211,19 +207,36 @@ if (/^\/?(deshacer|borrar|cancelar|undo)(\s+(ultimo|movimiento|gasto))?[\.\s]*$/
     }];
   }
 
-  const ultimo = acta[acta.length - 1];
-  const montoNum = parseFloat(ultimo.monto || 0);
+  const ultimoMovimiento = acta[acta.length - 1];
+  const ultimaFilaRaw = allActaRaw[allActaRaw.length - 1];
 
-  // En Google Sheets, la Fila 1 es el encabezado.
-  // La última fila con datos es acta.length + 1.
-  const filaABorrar = acta.length + 1;
+  // Verificar que la última fila física en Google Sheets coincida exactamente con el último movimiento
+  const mismoConcepto = (ultimaFilaRaw.concepto || '').trim().toLowerCase() === (ultimoMovimiento.concepto || '').trim().toLowerCase();
+  const mismoMonto = Math.abs((parseFloat(ultimaFilaRaw.monto) || 0) - (parseFloat(ultimoMovimiento.monto) || 0)) < 0.01;
+  const mismaFecha = (ultimaFilaRaw.fecha || '').split(' ')[0] === (ultimoMovimiento.fecha || '').split(' ')[0];
+
+  if (!mismoConcepto || !mismoMonto || !mismaFecha) {
+    return [{
+      json: {
+        chat_id: incomingChatId,
+        accion: 'solo_mensaje',
+        mensaje: "⚠️ *Seguridad de Datos:* No se pudo verificar la última fila.\nLa última fila física en Google Sheets no coincide con el último movimiento registrado en memoria.\nPara evitar borrar datos incorrectos, la eliminación fue cancelada."
+      }
+    }];
+  }
+
+  const montoNum = parseFloat(ultimoMovimiento.monto || 0);
+
+  // En Google Sheets, Fila 1 es el encabezado.
+  // La última fila física verificada es allActaRaw.length + 1.
+  const filaABorrar = allActaRaw.length + 1;
 
   const undoMsg = "🏛️ *Synaps Aerarium — Movimiento Cancelado*\n━━━━━━━━━━━━━━━━━━━━\n" +
-    "🗑️ *Se eliminó de Acta:*\n" +
-    "📝 *Concepto:* " + (ultimo.concepto || 'Varios') + "\n" +
+    "🗑️ *Se eliminó de Acta (Fila " + filaABorrar + " verificada):*\n" +
+    "📝 *Concepto:* " + (ultimoMovimiento.concepto || 'Varios') + "\n" +
     "💰 *Monto:* $" + montoNum.toLocaleString('es-MX', {minimumFractionDigits: 2}) + "\n" +
-    "🏷️ *Categoría:* " + (ultimo.categoria || 'Personales') + "\n" +
-    "📅 *Fecha:* " + (ultimo.fecha || 'N/A') + "\n" +
+    "🏷️ *Categoría:* " + (ultimoMovimiento.categoria || 'Personales') + "\n" +
+    "📅 *Fecha:* " + (ultimoMovimiento.fecha || 'N/A') + "\n" +
     "━━━━━━━━━━━━━━━━━━━━\n" +
     "_Fila eliminada de Google Sheets. Tus presupuestos se han recalculado en tiempo real._";
 
@@ -262,48 +275,52 @@ if (payMatch) {
   const targetQuery = payMatch[2].trim();
   const card = findCard(targetQuery, fides);
 
-  if (!card) {
+  if (card) {
+    // Coincidencia con tarjeta de crédito en Fides
+    const newPagada = isNoPay ? 'NO' : 'SI';
+    const saldoNum = parseFloat(card.saldo_pago_sin_intereses || 0);
+
+    let msg = '';
+    if (newPagada === 'SI') {
+      msg = '🏛️ *Synaps Aerarium — Tarjeta Liquidada*\n━━━━━━━━━━━━━━━━━━━━\n' +
+        '✅ *Tarjeta:* ' + card.tarjeta + '\n' +
+        '💰 *Saldo cubierto:* $' + saldoNum.toLocaleString('es-MX', {minimumFractionDigits: 2}) + '\n' +
+        '📅 *Fecha Límite:* ' + card.fecha_limite + '\n' +
+        '━━━━━━━━━━━━━━━━━━━━\n' +
+        '_Estatus actualizado a PAGADA (SI). Ya no recibirás alertas de vencimiento para este periodo._';
+    } else {
+      msg = '🏛️ *Synaps Aerarium — Estatus Revertido*\n━━━━━━━━━━━━━━━━━━━━\n' +
+        '⚠️ *Tarjeta:* ' + card.tarjeta + '\n' +
+        '💰 *Saldo pendiente:* $' + saldoNum.toLocaleString('es-MX', {minimumFractionDigits: 2}) + '\n' +
+        '📅 *Fecha Límite:* ' + card.fecha_limite + '\n' +
+        '━━━━━━━━━━━━━━━━━━━━\n' +
+        '_Estatus revertido a PENDIENTE (NO). Se reactivan las alertas de vencimiento._';
+    }
+
+    return [{
+      json: {
+        chat_id: incomingChatId,
+        accion: 'update_fides',
+        tarjeta: card.tarjeta,
+        saldo_pago_sin_intereses: saldoNum,
+        fecha_limite: card.fecha_limite,
+        pagada: newPagada,
+        mensaje: msg
+      }
+    }];
+  } else if (isNoPay) {
+    // Si explícitamente dijo "no pagué X" y no es tarjeta, avisar
     const cardsList = fides.map(c => '  ▫️ ' + c.tarjeta).join('\n');
     return [{
       json: {
         chat_id: incomingChatId,
         accion: 'solo_mensaje',
-        mensaje: '❓ *Tarjeta no identificada:*\nNo encontré coincidencia para "' + targetQuery + '".\n\n📋 *Tarjetas disponibles en Fides:*\n' + (cardsList || '  ▫️ Ninguna tarjeta registrada') + '\n\n_Usa por ejemplo: `pagué bbva` o `pagué mp`._'
+        mensaje: '❓ *Tarjeta no identificada:*\nNo encontré coincidencia para "' + targetQuery + '".\n\n📋 *Tarjetas disponibles en Fides:*\n' + (cardsList || '  ▫️ Ninguna tarjeta registrada') + '\n\n_Usa por ejemplo: `no pagué bbva` o `no pagué mp`._'
       }
     }];
   }
-
-  const newPagada = isNoPay ? 'NO' : 'SI';
-  const saldoNum = parseFloat(card.saldo_pago_sin_intereses || 0);
-
-  let msg = '';
-  if (newPagada === 'SI') {
-    msg = '🏛️ *Synaps Aerarium — Tarjeta Liquidada*\n━━━━━━━━━━━━━━━━━━━━\n' +
-      '✅ *Tarjeta:* ' + card.tarjeta + '\n' +
-      '💰 *Saldo cubierto:* $' + saldoNum.toLocaleString('es-MX', {minimumFractionDigits: 2}) + '\n' +
-      '📅 *Fecha Límite:* ' + card.fecha_limite + '\n' +
-      '━━━━━━━━━━━━━━━━━━━━\n' +
-      '_Estatus actualizado a PAGADA (SI). Ya no recibirás alertas de vencimiento para este periodo._';
-  } else {
-    msg = '🏛️ *Synaps Aerarium — Estatus Revertido*\n━━━━━━━━━━━━━━━━━━━━\n' +
-      '⚠️ *Tarjeta:* ' + card.tarjeta + '\n' +
-      '💰 *Saldo pendiente:* $' + saldoNum.toLocaleString('es-MX', {minimumFractionDigits: 2}) + '\n' +
-      '📅 *Fecha Límite:* ' + card.fecha_limite + '\n' +
-      '━━━━━━━━━━━━━━━━━━━━\n' +
-      '_Estatus revertido a PENDIENTE (NO). Se reactivan las alertas de vencimiento._';
-  }
-
-  return [{
-    json: {
-      chat_id: incomingChatId,
-      accion: 'update_fides',
-      tarjeta: card.tarjeta,
-      saldo_pago_sin_intereses: saldoNum,
-      fecha_limite: card.fecha_limite,
-      pagada: newPagada,
-      mensaje: msg
-    }
-  }];
+  // Si dijo "pagué X" pero X no es tarjeta de Fides (ej. "pagué 450 luz" o "pagué comida 120"):
+  // No rechazar. Continúa hacia abajo al flujo estándar de registro de gasto variable.
 }
 
 // -------------------------------------------------------------------------
@@ -470,7 +487,8 @@ if (tipo === 'gasto') {
     const ritmoActualNuevo = Math.round(nuevoTotal / diasTranscurridos);
 
     let notaRitmo = '';
-    if (diasTranscurridos >= 2 && restante > 0 && ritmoActualNuevo > ritmoSugerido) {
+    // Aviso de ritmo predictivo SOLO para Personales (quitado para Gasolina)
+    if (categoria === 'Personales' && diasTranscurridos >= 2 && restante > 0 && ritmoActualNuevo > ritmoSugerido) {
       const diasParaAgotar = Math.floor(restante / ritmoActualNuevo);
       if (diasParaAgotar < diasRestantes) {
         notaRitmo = '\n⚠️ *Aviso de Ritmo:* Gastando ~$' + ritmoActualNuevo + '/día se agotará en ' + diasParaAgotar + ' día(s). Modera a ~$' + ritmoSugerido + '/día.';
@@ -480,22 +498,27 @@ if (tipo === 'gasto') {
     if (pct >= 100) {
       bloquePresupuesto = '🚨 *LÍMITE REBASADO (' + pct + '%):* Consumo de $' + nuevoTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' de $' + presupuestoCat.toLocaleString('es-MX') + '. Excedente: $' + (nuevoTotal - presupuestoCat).toLocaleString('es-MX', {minimumFractionDigits: 2}) + '.';
     } else if (pct >= 80) {
-      bloquePresupuesto = '⚠️ *PRESUPUESTO AL ' + pct + '%:* Llevas $' + nuevoTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' de $' + presupuestoCat.toLocaleString('es-MX') + '. Disponible restante: $' + restante.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' (~$' + ritmoSugerido + '/día).' + notaRitmo;
+      const sugeridoTxt = (categoria === 'Personales') ? ' (~$' + ritmoSugerido + '/día)' : '';
+      bloquePresupuesto = '⚠️ *PRESUPUESTO AL ' + pct + '%:* Llevas $' + nuevoTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' de $' + presupuestoCat.toLocaleString('es-MX') + '. Disponible restante: $' + restante.toLocaleString('es-MX', {minimumFractionDigits: 2}) + sugeridoTxt + '.' + notaRitmo;
     } else {
-      bloquePresupuesto = '📊 *Presupuesto ' + categoria + ':* ' + pct + '% consumido ($' + nuevoTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' de $' + presupuestoCat.toLocaleString('es-MX') + '). Restan: $' + restante.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' (~$' + ritmoSugerido + '/día).' + notaRitmo;
+      const sugeridoTxt = (categoria === 'Personales') ? ' (~$' + ritmoSugerido + '/día)' : '';
+      bloquePresupuesto = '📊 *Presupuesto ' + categoria + ':* ' + pct + '% consumido ($' + nuevoTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' de $' + presupuestoCat.toLocaleString('es-MX') + '). Restan: $' + restante.toLocaleString('es-MX', {minimumFractionDigits: 2}) + sugeridoTxt + '.' + notaRitmo;
     }
-  } else if (categoria === 'Deuda' || categoria === 'Hogar' || categoria === 'Servicios') {
-    bloquePresupuesto = '📌 *Compromiso Fijo / ' + categoria + ':* Asentado en ' + categoria + '. No descuenta de tus presupuestos variables (Gasolina / Personales).';
+  } else if (categoria === 'Deuda' || categoria === 'Hogar' || categoria === 'Servicios' || categoria === 'Salud') {
+    bloquePresupuesto = '📌 *Registro ' + categoria + ':* Asentado en ' + categoria + '. No descuenta de tus presupuestos variables (Gasolina / Personales).';
   }
 } else if (tipo === 'ingreso' && categoria === 'Extra') {
   const metaAhorro = parseFloat(parametra.find(p => p.parametro === 'meta_ahorro_mensual')?.valor || 1500);
+  const currentYearMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+  
+  // Limitar ahorro extra estrictamente al mes calendario actual
   const extrasMes = acta
-    .filter(r => r.tipo === 'ingreso' && r.categoria === 'Extra')
+    .filter(r => r.tipo === 'ingreso' && r.categoria === 'Extra' && (r.fecha || '').startsWith(currentYearMonth))
     .reduce((sum, r) => sum + (parseFloat(r.monto) || 0), 0);
   const nuevoAhorroExtra = extrasMes + monto;
   const pctMeta = Math.round((nuevoAhorroExtra / metaAhorro) * 100);
 
-  bloquePresupuesto = '🎉 *Ahorro Extra del Mes:* $' + nuevoAhorroExtra.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' (' + pctMeta + '% de tu meta de ahorro mensual de $' + metaAhorro.toLocaleString('es-MX') + ').';
+  bloquePresupuesto = '🎉 *Ahorro Extra del Mes (' + now.toLocaleString('es-MX', { month: 'short' }) + '):* $' + nuevoAhorroExtra.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' (' + pctMeta + '% de tu meta mensual de $' + metaAhorro.toLocaleString('es-MX') + ').';
 }
 
 let mensajeFinal = '🏛️ *Synaps Aerarium — Movimiento Asentado*\n━━━━━━━━━━━━━━━━━━━━\n' +

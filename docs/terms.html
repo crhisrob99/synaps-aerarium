@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — Synapse Vertex Automation</title>
+  
+  <meta name="description" content="Terms of Service for Synapse Vertex Automation. Outlines the acceptable use, rights, and responsibilities when using the platform.">
+  <link rel="icon" type="image/png" href="Vertex.png">
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-base: #07090e;
+      --bg-surface: #0e131f;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --cyan-core: #38bdf8;
+      --cyan-neon: #00f0ff;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-main);
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(16px);
+      background: rgba(7, 9, 14, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      z-index: 50;
+      padding: 1rem 2rem;
+    }
+
+    .nav-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand img {
+      width: 34px;
+      height: 34px;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));
+    }
+
+    .brand-name {
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover { color: var(--cyan-neon); }
+
+    main {
+      flex: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 6rem;
+    }
+
+    .doc-header {
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .doc-header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #ffffff 40%, var(--cyan-core) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .doc-header p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      font-family: var(--font-mono);
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    p, li {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    ul { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      padding: 2.5rem 1.5rem;
+      margin-top: auto;
+    }
+
+    .footer-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-container p { color: var(--text-dim); font-size: 0.85rem; }
+    .footer-container a { color: var(--cyan-core); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <img src="Vertex.png" alt="Synapse Vertex Logo">
+        <span class="brand-name">Synapse Vertex Automation</span>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html">← Back to Home</a>
+        <a href="privacy.html">Privacy Policy</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="doc-header">
+      <h1>Terms of Service</h1>
+      <p>Application: Synapse Vertex Automation | Effective Date: October 24, 2026</p>
+    </div>
+
+    <div class="terms-content">
+      <h2>1. Acceptance of Terms</h2>
+      <p>
+        By connecting your Google account or utilizing any workflow within <strong>Synapse Vertex Automation</strong> ("the Service"), you agree to be bound by these Terms of Service. This platform is a private automation system developed and maintained by <strong>Crhis Robles</strong> for authorized personal and family use.
+      </p>
+
+      <h2>2. Description of the Service</h2>
+      <p>
+        Synapse Vertex Automation integrates with authorized Google Workspace APIs (Google Sheets, Google Drive, and Gmail) to automate financial ledger updates, cash flow forecasting, and academic notification dispatching to designated private communication endpoints.
+      </p>
+
+      <h2>3. Acceptable Use and Security</h2>
+      <p>
+        The Service must be used strictly for lawful personal and academic productivity purposes. Users agree not to attempt to compromise the infrastructure, exploit API rate limits, or reverse-engineer automated execution routines.
+      </p>
+
+      <h2>4. Intellectual Property</h2>
+      <p>
+        All custom workflow designs, visual identity assets (including the Vertex motif), proprietary code engines, and documentation are the intellectual property of Crhis Robles. Google Workspace, Google Sheets, Google Drive, and Gmail are trademarks of Google LLC.
+      </p>
+
+      <h2>5. Disclaimer of Warranties</h2>
+      <p>
+        The Service is provided on an "as is" and "as available" basis without warranties of any kind, whether express or implied. While engineered for high reliability and failover redundancy, we do not guarantee uninterrupted execution or zero API latency.
+      </p>
+
+      <h2>6. Termination and Revocation</h2>
+      <p>
+        Authorized users may discontinue use and revoke access to their Google account data at any time via their Google Account Security Settings (<a href="https://myaccount.google.com/permissions" target="_blank" style="color: var(--cyan-core);">https://myaccount.google.com/permissions</a>).
+      </p>
+
+      <h2>7. Contact Information</h2>
+      <p>
+        For inquiries regarding these Terms of Service, contact: <a href="mailto:crhis.robles@gmail.com" style="color: var(--cyan-core);">crhis.robles@gmail.com</a>.
+      </p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>© 2026 Synapse Vertex Automation. Developed by Crhis Robles.</p>
+      <div>
+        <a href="index.html">Home</a> &nbsp;|&nbsp;
+        <a href="privacy.html">Privacy Policy</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -83,6 +83,32 @@
         },
         "sheetName": {
           "__rl": true,
+          "value": "Fides",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "id": "node-read-fides-resumen",
+      "name": "Leer Fides (Tarjetas)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        700,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1AWIYHlirCr9lt0at2JwwtsugVAYXLl7Ga2tQxDR6K1Q",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
           "value": "Acta",
           "mode": "name"
         },
@@ -95,14 +121,14 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        700,
+        900,
         280
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Solo ejecutar en días de pago de quincena (14 o 30 / último día de mes)\nconst now = new Date();\nconst todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });\nconst [y, m, d] = todayStr.split('-').map(Number);\nconst daysInMonth = new Date(y, m, 0).getDate();\n\nconst isPayDay14 = (d === 14);\nconst isPayDay30 = (d === Math.min(30, daysInMonth));\n\nif (!isPayDay14 && !isPayDay30) {\n  return []; // No es día de inicio de quincena\n}\n\nconst qLabel = isPayDay14 ? 'Q1' : 'Q2';\nconst quincenaTag = y + '-' + String(m).padStart(2, '0') + '-' + qLabel;\n\nconst parametra = $('Leer Parametra').all().map(i => i.json).filter(j => j && j.parametro);\nconst vectigalia = $('Leer Vectigalia').all().map(i => i.json).filter(j => j && j.id && j.activo === 'SI');\nconst acta = $('Leer Acta (Movimientos)').all().map(i => i.json).filter(j => j && j.tipo);\n\nconst chatId = parametra.find(p => p.parametro === 'telegram_chat_id')?.valor || '';\nconst ingresoEsperado = parseFloat(parametra.find(p => p.parametro === 'ingreso_quincenal_promedio')?.valor || 22200);\nconst pGasolina = parseFloat(parametra.find(p => p.parametro === 'presupuesto_gasolina_quincenal')?.valor || 1600);\nconst pPersonales = parseFloat(parametra.find(p => p.parametro === 'presupuesto_personales_quincenal')?.valor || 3000);\nconst presupuestoVariableTotal = pGasolina + pPersonales;\nconst umbralMargenMin = parseFloat(parametra.find(p => p.parametro === 'umbral_margen_minimo')?.valor || 1500);\n\n// Calcular compromisos fijos que caen en esta ventana quincenal\n// Ventana Q1: del 14 al 29.\n// Ventana Q2: del 30 al 13 del siguiente mes.\nconst compromisosVentana = [];\nlet totalFijosQuincena = 0;\n\nfor (const item of vectigalia) {\n  if (item.tipo !== 'gasto') continue;\n  const rawDias = String(item.dia || '').split(',').map(s => s.trim().toLowerCase());\n  const monto = parseFloat(item.monto || 0);\n\n  for (const rawD of rawDias) {\n    if (!rawD) continue;\n    let diaNum = (rawD === 'ultimo') ? daysInMonth : parseInt(rawD);\n    if (isNaN(diaNum)) continue;\n\n    let caeEnVentana = false;\n    if (isPayDay14) {\n      caeEnVentana = (diaNum >= 14 && diaNum <= 29);\n    } else {\n      caeEnVentana = (diaNum >= 30 || diaNum <= 13);\n    }\n\n    if (caeEnVentana) {\n      compromisosVentana.push({\n        concepto: item.concepto,\n        dia: diaNum,\n        monto: monto\n      });\n      totalFijosQuincena += monto;\n    }\n  }\n}\n\n// Margen proyectado de maniobra\nconst margenEstimado = ingresoEsperado - totalFijosQuincena - presupuestoVariableTotal;\n\nlet alertaMargen = '';\nif (margenEstimado < umbralMargenMin) {\n  alertaMargen = '⚠️ *ALERTA MARGEN BAJO:* Margen proyectado de $' + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' está por debajo del umbral mínimo de $' + umbralMargenMin.toLocaleString('es-MX') + '. Revisa o modera tu gasto variable.';\n} else {\n  alertaMargen = '🟢 *Margen Saludable:* Tienes margen libre estimado de $' + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' para contingencias o ahorro extra.';\n}\n\nconst listaCompromisosStr = compromisosVentana.map(c => '  ▫️ ' + c.concepto + ' (día ' + c.dia + '): $' + c.monto.toLocaleString('es-MX', {minimumFractionDigits: 2})).join('\\n');\n\nconst mensaje = \"🏛️ *Synaps Aerarium — Balance de Quincena (\" + qLabel + \")*\\n━━━━━━━━━━━━━━━━━━━━\\n\" +\n  \"📅 *Periodo:* `\" + quincenaTag + \"`\\n\" +\n  \"💵 *Ingreso Esperado:* $\" + ingresoEsperado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"\\n\\n\" +\n  \"📌 *Compromisos Fijos de la Quincena ($\" + totalFijosQuincena.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"):*\\n\" +\n  (listaCompromisosStr || '  ▫️ Sin compromisos fijos en esta ventana') + \"\\n\\n\" +\n  \"🛒 *Presupuestos Variables Apartados:* $\" + presupuestoVariableTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"\\n\" +\n  \"  ▫️ Gasolina: $\" + pGasolina.toLocaleString('es-MX') + \"\\n\" +\n  \"  ▫️ Personales: $\" + pPersonales.toLocaleString('es-MX') + \"\\n\\n\" +\n  \"━━━━━━━━━━━━━━━━━━━━\\n\" +\n  \"💰 *MARGEN ESTIMADO DE MANIOBRA:*\\n👉 *$\" + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \" MXN*\\n\\n\" +\n  alertaMargen + \"\\n━━━━━━━━━━━━━━━━━━━━\\n_Tabula Financia — Resumen Quincenal._\";\n\nreturn [{\n  json: {\n    chat_id: chatId,\n    quincena: quincenaTag,\n    ingreso: ingresoEsperado,\n    fijos: totalFijosQuincena,\n    variables: presupuestoVariableTotal,\n    margen: margenEstimado,\n    mensaje: mensaje\n  }\n}];"
+        "jsCode": "// Solo ejecutar en días de pago de quincena (14 o 30 / último día de mes)\nconst now = new Date();\nconst todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });\nconst [y, m, d] = todayStr.split('-').map(Number);\nconst daysInMonth = new Date(y, m, 0).getDate();\n\nconst isPayDay14 = (d === 14);\nconst isPayDay30 = (d === Math.min(30, daysInMonth));\n\nif (!isPayDay14 && !isPayDay30) {\n  return []; // No es día de inicio de quincena\n}\n\nconst qLabel = isPayDay14 ? 'Q1' : 'Q2';\nconst quincenaTag = y + '-' + String(m).padStart(2, '0') + '-' + qLabel;\n\n// Definir límites de la ventana quincenal\nlet fechaInicioVentana, fechaFinVentana;\nconst nextM = (m === 12) ? 1 : m + 1;\nconst nextY = (m === 12) ? y + 1 : y;\n\nif (isPayDay14) {\n  fechaInicioVentana = new Date(y, m - 1, 14, 0, 0, 0);\n  fechaFinVentana = new Date(y, m - 1, 29, 23, 59, 59);\n} else {\n  const diaInicio = Math.min(30, daysInMonth);\n  fechaInicioVentana = new Date(y, m - 1, diaInicio, 0, 0, 0);\n  fechaFinVentana = new Date(nextY, nextM - 1, 13, 23, 59, 59);\n}\n\nconst parametra = $('Leer Parametra').all().map(i => i.json).filter(j => j && j.parametro);\nconst vectigalia = $('Leer Vectigalia').all().map(i => i.json).filter(j => j && j.id && j.activo === 'SI');\nconst fides = $('Leer Fides (Tarjetas)').all().map(i => i.json).filter(j => j && j.tarjeta);\nconst acta = $('Leer Acta (Movimientos)').all().map(i => i.json).filter(j => j && j.tipo);\n\nconst chatId = parametra.find(p => p.parametro === 'telegram_chat_id')?.valor || '';\nconst ingresoEsperado = parseFloat(parametra.find(p => p.parametro === 'ingreso_quincenal_promedio')?.valor || 22200);\nconst pGasolina = parseFloat(parametra.find(p => p.parametro === 'presupuesto_gasolina_quincenal')?.valor || 1600);\nconst pPersonales = parseFloat(parametra.find(p => p.parametro === 'presupuesto_personales_quincenal')?.valor || 3000);\nconst presupuestoVariableTotal = pGasolina + pPersonales;\nconst umbralMargenMin = parseFloat(parametra.find(p => p.parametro === 'umbral_margen_minimo')?.valor || 1500);\n\n// 1. Calcular compromisos fijos de Vectigalia respetando bimestralidad, fecha_inicio y fecha_fin\nconst compromisosVentana = [];\nlet totalFijosQuincena = 0;\n\nfor (const item of vectigalia) {\n  if (item.tipo !== 'gasto') continue;\n  const rawDias = String(item.dia || '').split(',').map(s => s.trim().toLowerCase());\n  const monto = parseFloat(item.monto || 0);\n  const frecuencia = (item.frecuencia || 'mensual').toLowerCase();\n\n  for (const rawD of rawDias) {\n    if (!rawD) continue;\n    let diaTarget = (rawD === 'ultimo') ? daysInMonth : parseInt(rawD);\n    if (isNaN(diaTarget)) continue;\n\n    // Determinar fechas candidatas en el horizonte de la quincena\n    const candidatos = [];\n    if (isPayDay14) {\n      if (diaTarget >= 14 && diaTarget <= 29) {\n        candidatos.push({ anio: y, mes: m, dia: Math.min(diaTarget, daysInMonth) });\n      }\n    } else {\n      // Q2: abarca días >= 30 del mes m y días <= 13 del mes nextM\n      if (diaTarget >= 30) {\n        candidatos.push({ anio: y, mes: m, dia: Math.min(diaTarget, daysInMonth) });\n      } else if (diaTarget <= 13) {\n        const daysInNextM = new Date(nextY, nextM, 0).getDate();\n        candidatos.push({ anio: nextY, mes: nextM, dia: Math.min(diaTarget, daysInNextM) });\n      }\n    }\n\n    for (const cand of candidatos) {\n      const fechaCand = new Date(cand.anio, cand.mes - 1, cand.dia, 12, 0, 0);\n\n      // Validar vigencia [fecha_inicio, fecha_fin]\n      if (item.fecha_inicio) {\n        const [iy, im, id] = item.fecha_inicio.split('-').map(Number);\n        const inicioDate = new Date(iy, im - 1, id, 0, 0, 0);\n        if (fechaCand < inicioDate) continue;\n      }\n      if (item.fecha_fin) {\n        const [fy, fm, fd] = item.fecha_fin.split('-').map(Number);\n        const finDate = new Date(fy, fm - 1, fd, 23, 59, 59);\n        if (fechaCand > finDate) continue;\n      }\n\n      // Validar bimestralidad\n      if (frecuencia === 'bimestral') {\n        const mesInicio = parseInt(item.mes_inicio || 1);\n        const anioInicio = item.fecha_inicio ? parseInt(item.fecha_inicio.split('-')[0]) : y;\n        const deltaMeses = (cand.anio - anioInicio) * 12 + (cand.mes - mesInicio);\n        if (deltaMeses < 0 || (deltaMeses % 2 !== 0)) continue;\n      }\n\n      if (fechaCand >= fechaInicioVentana && fechaCand <= fechaFinVentana) {\n        compromisosVentana.push({\n          concepto: item.concepto,\n          dia: cand.dia,\n          mes: cand.mes,\n          monto: monto\n        });\n        totalFijosQuincena += monto;\n      }\n    }\n  }\n}\n\n// 2. Incluir Tarjetas de Fides con pagada = NO y fecha_limite dentro de la ventana\nconst tarjetasVentana = [];\nlet totalTarjetasQuincena = 0;\n\nfor (const card of fides) {\n  if (card.pagada === 'SI' || !card.fecha_limite) continue;\n  const saldoCard = parseFloat(card.saldo_pago_sin_intereses || 0);\n  if (saldoCard <= 0) continue;\n\n  const [cy, cm, cd] = card.fecha_limite.split('-').map(Number);\n  const flDate = new Date(cy, cm - 1, cd, 12, 0, 0);\n\n  if (flDate >= fechaInicioVentana && flDate <= fechaFinVentana) {\n    tarjetasVentana.push({\n      tarjeta: card.tarjeta,\n      monto: saldoCard,\n      fecha_limite: card.fecha_limite\n    });\n    totalTarjetasQuincena += saldoCard;\n  }\n}\n\n// Margen proyectado de maniobra (Ingreso - Fijos - Tarjetas sin intereses de la quincena - Variables)\nconst totalCompromisosQuincena = totalFijosQuincena + totalTarjetasQuincena;\nconst margenEstimado = ingresoEsperado - totalCompromisosQuincena - presupuestoVariableTotal;\n\nlet alertaMargen = '';\nif (margenEstimado < umbralMargenMin) {\n  alertaMargen = '⚠️ *ALERTA MARGEN BAJO:* Margen proyectado de $' + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' está por debajo del umbral mínimo de $' + umbralMargenMin.toLocaleString('es-MX') + '. Revisa o modera tu gasto variable.';\n} else {\n  alertaMargen = '🟢 *Margen Saludable:* Tienes margen libre estimado de $' + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + ' para contingencias o ahorro extra.';\n}\n\nconst listaCompromisosStr = compromisosVentana.map(c => '  ▫️ ' + c.concepto + ' (' + c.dia + '-' + c.mes + '): $' + c.monto.toLocaleString('es-MX', {minimumFractionDigits: 2})).join('\\n');\nconst listaTarjetasStr = tarjetasVentana.map(t => '  ▫️ ' + t.tarjeta + ' (límite ' + t.fecha_limite + '): $' + t.monto.toLocaleString('es-MX', {minimumFractionDigits: 2})).join('\\n');\n\nlet mensaje = \"🏛️ *Synaps Aerarium — Balance de Quincena (\" + qLabel + \")*\\n━━━━━━━━━━━━━━━━━━━━\\n\" +\n  \"📅 *Periodo:* `\" + quincenaTag + \"`\\n\" +\n  \"💵 *Ingreso Esperado:* $\" + ingresoEsperado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"\\n\\n\" +\n  \"📌 *Compromisos Fijos de la Quincena ($\" + totalFijosQuincena.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"):*\\n\" +\n  (listaCompromisosStr || '  ▫️ Sin compromisos fijos en esta ventana') + \"\\n\\n\";\n\nif (tarjetasVentana.length > 0) {\n  mensaje += \"💳 *Tarjetas de Crédito por Liquidar ($\" + totalTarjetasQuincena.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"):*\\n\" +\n    listaTarjetasStr + \"\\n\\n\";\n}\n\nmensaje += \"🛒 *Presupuestos Variables Apartados:* $\" + presupuestoVariableTotal.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \"\\n\" +\n  \"  ▫️ Gasolina: $\" + pGasolina.toLocaleString('es-MX') + \"\\n\" +\n  \"  ▫️ Personales: $\" + pPersonales.toLocaleString('es-MX') + \"\\n\\n\" +\n  \"━━━━━━━━━━━━━━━━━━━━\\n\" +\n  \"💰 *MARGEN ESTIMADO DE MANIOBRA:*\\n👉 *$\" + margenEstimado.toLocaleString('es-MX', {minimumFractionDigits: 2}) + \" MXN*\\n\\n\" +\n  alertaMargen + \"\\n━━━━━━━━━━━━━━━━━━━━\\n_Tabula Financia — Resumen Quincenal._\";\n\nreturn [{\n  json: {\n    chat_id: chatId,\n    quincena: quincenaTag,\n    ingreso: ingresoEsperado,\n    fijos: totalFijosQuincena,\n    tarjetas: totalTarjetasQuincena,\n    variables: presupuestoVariableTotal,\n    margen: margenEstimado,\n    mensaje: mensaje\n  }\n}];"
       },
       "executeOnce": true,
       "id": "node-engine-resumen",
@@ -110,7 +136,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        920,
+        1100,
         280
       ]
     },
@@ -127,7 +153,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1140,
+        1300,
         280
       ]
     }
@@ -156,6 +182,17 @@
       ]
     },
     "Leer Vectigalia": {
+      "main": [
+        [
+          {
+            "node": "Leer Fides (Tarjetas)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Fides (Tarjetas)": {
       "main": [
         [
           {

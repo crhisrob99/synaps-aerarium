@@ -5,24 +5,14 @@
       "parameters": {
         "httpMethod": "GET",
         "path": "aerarium-data",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {
-          "responseHeaders": {
-            "entries": [
-              {
-                "name": "Access-Control-Allow-Origin",
-                "value": "*"
-              },
-              {
-                "name": "Access-Control-Allow-Methods",
-                "value": "GET,OPTIONS"
-              },
-              {
-                "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type,Authorization"
-              }
-            ]
-          }
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "aerarium_header_auth",
+          "name": "Aerarium Header Auth"
         }
       },
       "id": "node-webhook-dashboard",
@@ -158,23 +148,7 @@
       "parameters": {
         "respondWith": "firstIncomingItem",
         "options": {
-          "responseCode": 200,
-          "responseHeaders": {
-            "entries": [
-              {
-                "name": "Access-Control-Allow-Origin",
-                "value": "*"
-              },
-              {
-                "name": "Access-Control-Allow-Methods",
-                "value": "GET,OPTIONS,POST"
-              },
-              {
-                "name": "Access-Control-Allow-Headers",
-                "value": "*"
-              }
-            ]
-          }
+          "responseCode": 200
         }
       },
       "id": "node-respond-webhook",
